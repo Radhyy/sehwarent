@@ -58,9 +58,8 @@ export default function RentalPage() {
                       {product.category_name || product.category_id}
                     </div>
                     <h3 className="product-title" style={{ fontSize: '1rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{product.title}</h3>
-                    <p className="product-duration" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', marginTop: 'auto', fontFamily: 'var(--font-geist-sans)' }}>Mulai 1 jam</p>
+                    <p className="product-duration" style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', marginTop: 'auto', fontFamily: 'var(--font-geist-sans)' }}>Mulai 1 Hari</p>
                     <div>
-                      <p className="product-price-strike" style={{ color: '#ff4d4d', textDecoration: 'line-through', fontSize: '0.9rem', margin: '0 0 0.2rem 0', fontFamily: 'var(--font-geist-sans)' }}>{product.original_price}</p>
                       <p className="product-price-final" style={{ color: 'var(--cyan-accent)', fontSize: '1.3rem', fontWeight: 'bold', margin: '0' }}>Mulai {product.price}</p>
                     </div>
                   </div>

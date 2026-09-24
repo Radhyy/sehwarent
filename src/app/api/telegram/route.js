@@ -23,6 +23,7 @@ async function sendMessage(chatId, text) {
 }
 
 export async function POST(req) {
+  let chatId = null;
   try {
     const body = await req.json();
     
@@ -31,7 +32,7 @@ export async function POST(req) {
       return NextResponse.json({ status: 'ok' });
     }
 
-    const chatId = body.message.chat.id.toString();
+    chatId = body.message.chat.id.toString();
     const text = body.message.text;
 
     // Security check: Only allow Admin ID
@@ -57,7 +58,7 @@ Jika pesan mengandung niat untuk merental/menyewa produk, kembalikan JSON murni 
 {
   "action": "rent",
   "product_id": "ID_YANG_PALING_COCOK",
-  "hours": ANGKA_JAM (jika tidak disebutkan, default 1)
+  "days": ANGKA_HARI (hanya boleh 1, 3, atau 7. Jika tidak disebutkan, default 1)
 }
 
 Jika user meminta untuk menghentikan rental / membuat tersedia kembali, formatnya:
@@ -76,7 +77,7 @@ Jika tidak paham, kembalikan:
         { role: 'system', content: systemPrompt },
         { role: 'user', content: text }
       ],
-      model: 'qwen-2.5-32b',
+      model: 'llama-3.1-8b-instant', // using a faster and guaranteed valid groq model
       temperature: 0,
       response_format: { type: 'json_object' }
     });
@@ -90,37 +91,80 @@ Jika tidak paham, kembalikan:
 
     // Perform database action
     if (result.action === 'rent' || result.action === 'available') {
-      let available_at = null;
+      const prodRes = await pool.query('SELECT title, price, price_3_hari, price_7_hari, current_rent_price, available_at FROM products WHERE id = $1', [result.product_id]);
       
-      if (result.action === 'rent') {
-        const hours = result.hours || 1;
-        const date = new Date();
-        date.setHours(date.getHours() + hours);
-        available_at = date.toISOString();
+      if (prodRes.rowCount === 0) {
+        await sendMessage(chatId, "❌ Gagal. ID Produk tidak ditemukan di database.");
+        return NextResponse.json({ status: 'ok' });
       }
 
-      const updateRes = await pool.query(
-        'UPDATE products SET available_at = $1 WHERE id = $2 RETURNING title',
-        [available_at, result.product_id]
-      );
+      const product = prodRes.rows[0];
+      const title = product.title;
 
-      if (updateRes.rowCount > 0) {
-        const productName = updateRes.rows[0].title;
-        if (result.action === 'rent') {
-          await pool.query('INSERT INTO activity_logs (action, detail, color) VALUES ($1, $2, $3)', ['Sewa dimulai', `[Telegram] Produk ${productName} dirental selama ${result.hours} jam`, '#b300ff']);
-          await sendMessage(chatId, `✅ <b>Berhasil Bos!</b>\n\nProduk <b>${productName}</b> telah diubah statusnya menjadi 🔴 <b>Di Rental</b> selama <b>${result.hours} Jam</b>.`);
+      if (result.action === 'rent') {
+        let days = result.days;
+        if (![1, 3, 7].includes(days)) days = 1;
+        
+        const date = new Date();
+        date.setHours(date.getHours() + (days * 24));
+        const available_at = date.toISOString();
+
+        let priceStr = product.price;
+        if (days === 3 && product.price_3_hari) priceStr = product.price_3_hari;
+        else if (days === 7 && product.price_7_hari) priceStr = product.price_7_hari;
+        const priceVal = parseInt(priceStr?.replace(/[^0-9]/g, '')) || 0;
+
+        await pool.query(
+          'UPDATE products SET available_at = $1, current_rent_price = $2, rent_count = rent_count + 1, total_revenue = total_revenue + $2 WHERE id = $3',
+          [available_at, priceVal, result.product_id]
+        );
+
+        await pool.query('INSERT INTO activity_logs (action, detail, color) VALUES ($1, $2, $3)', ['Sewa dimulai', `[Telegram] Produk ${title} dirental selama ${days} hari`, '#b300ff']);
+        await sendMessage(chatId, `✅ <b>Berhasil Bos!</b>\n\nProduk <b>${title}</b> telah diubah statusnya menjadi 🔴 <b>Di Rental</b> selama <b>${days} Hari</b>.`);
+        
+      } else if (result.action === 'available') {
+        const isPast = product.available_at && new Date(product.available_at) < new Date();
+        
+        if (product.available_at && !isPast) {
+          // Cancelled early
+          await pool.query(
+            'UPDATE products SET available_at = NULL, current_rent_price = 0, rent_count = GREATEST(rent_count - 1, 0), total_revenue = GREATEST(total_revenue - $2, 0) WHERE id = $1',
+            [result.product_id, product.current_rent_price]
+          );
+          
+          await pool.query(
+            `DELETE FROM activity_logs WHERE id IN (
+              SELECT id FROM activity_logs 
+              WHERE detail LIKE $1 AND action = 'Sewa dimulai' 
+              ORDER BY created_at DESC LIMIT 1
+            )`,
+            [`[Telegram] Produk ${title} dirental%`]
+          );
+          
+          await sendMessage(chatId, `✅ <b>Berhasil Bos!</b>\n\nRental produk <b>${title}</b> telah <b>dibatalkan</b> dan kembali Tersedia.`);
         } else {
-          await pool.query('INSERT INTO activity_logs (action, detail, color) VALUES ($1, $2, $3)', ['Sewa selesai', `[Telegram] Produk ${productName} dikembalikan (Tersedia)`, '#00ffcc']);
-          await sendMessage(chatId, `✅ <b>Berhasil Bos!</b>\n\nProduk <b>${productName}</b> telah dikembalikan ke status 🟢 <b>Tersedia</b>.`);
+          // Finished naturally
+          await pool.query(
+            'UPDATE products SET available_at = NULL, current_rent_price = 0 WHERE id = $1',
+            [result.product_id]
+          );
+          await pool.query('INSERT INTO activity_logs (action, detail, color) VALUES ($1, $2, $3)', ['Sewa selesai', `[Telegram] Produk ${title} dikembalikan (Tersedia)`, '#00ffcc']);
+          await sendMessage(chatId, `✅ <b>Berhasil Bos!</b>\n\nProduk <b>${title}</b> telah dikembalikan ke status 🟢 <b>Tersedia</b>.`);
         }
-      } else {
-        await sendMessage(chatId, "❌ Gagal. ID Produk tidak ditemukan di database.");
       }
     }
 
     return NextResponse.json({ status: 'ok' });
   } catch (error) {
     console.error('Telegram Webhook Error:', error);
-    return NextResponse.json({ status: 'error' }, { status: 500 });
+    // Send error message to admin if possible
+    try {
+      if (chatId) {
+        await sendMessage(chatId, `❌ Maaf Bos, terjadi kesalahan internal:\n${error.message}`);
+      }
+    } catch (e) {}
+    
+    // Always return 200 OK so Telegram doesn't retry
+    return NextResponse.json({ status: 'ok' });
   }
 }

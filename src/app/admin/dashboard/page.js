@@ -28,13 +28,7 @@ export default function Dashboard() {
               const now = Date.now();
               if (availableTime > now) {
                 activeCust++;
-                // Calculate remaining hours
-                const hoursLeft = Math.ceil((availableTime - now) / (1000 * 60 * 60));
-                // Extract digits from price (e.g. "Rp 25.000" -> 25000)
-                const priceStr = String(product.price || '').replace(/[^0-9]/g, '');
-                const priceNum = priceStr ? parseInt(priceStr, 10) : 0;
-                
-                estIncome += (hoursLeft * priceNum);
+                estIncome += (product.current_rent_price || 0);
               }
             }
           });
@@ -49,7 +43,7 @@ export default function Dashboard() {
     setCategoryCount(4); 
 
     // Ambil Log Aktivitas
-    fetch('/api/admin/logs')
+    fetch('/api/admin/logs?limit=5')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setLogs(data);
@@ -174,7 +168,7 @@ export default function Dashboard() {
             <p style={{ fontSize: '1.8rem', color: 'white', fontWeight: 'bold', margin: 0, marginTop: '8px' }}>
               {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(estimatedIncome)}
             </p>
-            <p style={{ color: '#ff4d4d', fontSize: '0.8rem', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>Berdasarkan sisa waktu rental aktif</p>
+            <p style={{ color: '#ff4d4d', fontSize: '0.8rem', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>Berdasarkan durasi rental aktif saat ini</p>
           </div>
         </div>
 

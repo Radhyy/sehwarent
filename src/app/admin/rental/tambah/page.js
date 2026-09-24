@@ -15,6 +15,8 @@ export default function TambahProduk() {
     id: '',
     title: '',
     price: '',
+    price_3_hari: '',
+    price_7_hari: '',
     original_price: '',
     category_id: 'pubg', // default
     tags: '',
@@ -159,12 +161,16 @@ export default function TambahProduk() {
                 }} placeholder="PUBG MOBILE - SULTAN" style={inputStyle} />
               </div>
               <div>
-                <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga Rental</label>
+                <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga 1 Hari</label>
                 <input type="text" required value={formData.price} onChange={e => setFormData({...formData, price: formatRupiah(e.target.value)})} placeholder="Rp 25.000" style={inputStyle} />
               </div>
               <div>
-                <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga Coret (Original)</label>
-                <input type="text" required value={formData.original_price} onChange={e => setFormData({...formData, original_price: formatRupiah(e.target.value)})} placeholder="Rp 40.000" style={inputStyle} />
+                <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga 3 Hari</label>
+                <input type="text" required value={formData.price_3_hari} onChange={e => setFormData({...formData, price_3_hari: formatRupiah(e.target.value)})} placeholder="Rp 70.000" style={inputStyle} />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga 7 Hari</label>
+                <input type="text" required value={formData.price_7_hari} onChange={e => setFormData({...formData, price_7_hari: formatRupiah(e.target.value)})} placeholder="Rp 150.000" style={inputStyle} />
               </div>
               <div>
                 <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Metode Login</label>

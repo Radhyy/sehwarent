@@ -3,37 +3,43 @@
 import { ArrowLeft, MessageCircle, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import '../../globals.css';
 
 export default function ProductDetail() {
   const params = useParams();
   const { id } = params;
 
-  // Mock data for the first product
-  const product = {
-    id: 'pubg-glacier-max',
-    title: 'PUBG MOBILE - AKUN SULTAN GLACIER MAX',
-    image: '/ProductRental/IMG_1955.JPG.jpeg',
-    price: 'Rp 25.000',
-    originalPrice: 'Rp 40.000',
-    tags: ['PUBG MOBILE', 'RENTAL AKUN'],
-    loginMethod: 'Twitter / Email',
-    description: `Akun Sultan PUBG Mobile dengan spesifikasi GG!
-      
-- Level: 75
-- Rank: Ace Master
-- M416 Glacier Level Max (Hit Effect, Kill Message, Loot Box)
-- Setelan Mythic banyak
-- Title langka
-- RP S1 - Sekarang rata-rata max
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-Aturan Rental:
-1. Dilarang menggunakan program ilegal (Cheat/Hack).
-2. Dilarang mengubah data akun (Password, Email, dll).
-3. Dilarang top up menggunakan metode ilegal.
-Pelanggaran akan dikenakan denda dan blacklist!`,
-    whatsappText: 'Halo admin SehwaRent, saya ingin merental akun PUBG MOBILE - AKUN SULTAN GLACIER MAX.'
-  };
+  useEffect(() => {
+    fetch(`/api/products/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setProduct(data);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <main className="main-container animate-fade-in" style={{ paddingBottom: '5rem', paddingTop: '2rem', textAlign: 'center', color: 'white' }}>
+        Memuat...
+      </main>
+    );
+  }
+
+  if (!product) {
+    return (
+      <main className="main-container animate-fade-in" style={{ paddingBottom: '5rem', paddingTop: '2rem', textAlign: 'center', color: 'white' }}>
+        Produk tidak ditemukan.
+      </main>
+    );
+  }
 
   return (
     <main className="main-container animate-fade-in" style={{ paddingBottom: '5rem', paddingTop: '2rem' }}>
@@ -49,14 +55,14 @@ Pelanggaran akan dikenakan denda dan blacklist!`,
         
         {/* Left Side - Image */}
         <div style={{ flex: '1 1 min(100%, 400px)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden', padding: '1rem' }}>
-          <img src={product.image} alt={product.title} style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }} />
+          <img src={`/api/image/${product.image_id}`} alt={product.title} style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }} />
         </div>
 
         {/* Right Side - Details */}
         <div style={{ flex: '1 1 min(100%, 400px)', maxWidth: '100%' }}>
           {/* Tags */}
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem' }}>
-            {product.tags.map(tag => (
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+            {product.tags && Array.isArray(product.tags) && product.tags.map(tag => (
               <span key={tag} style={{ background: 'rgba(0, 153, 255, 0.1)', color: 'var(--cyan-accent)', padding: '6px 14px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 'bold', border: '1px solid var(--cyan-accent)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 {tag}
               </span>
@@ -66,13 +72,23 @@ Pelanggaran akan dikenakan denda dan blacklist!`,
           <h1 style={{ fontSize: '2.2rem', marginBottom: '2rem', lineHeight: '1.3' }}>{product.title}</h1>
 
           {/* Pricing Box */}
-          <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1.5rem', marginBottom: '2.5rem' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Harga Rental</p>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-              <span style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Mulai</span>
-              <span style={{ color: 'var(--cyan-accent)', fontSize: '2.5rem', fontWeight: 'bold' }}>{product.price}</span>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
+            <div style={{ flex: '1 1 min(150px, 30%)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>1 Hari</p>
+              <div style={{ color: 'var(--cyan-accent)', fontSize: '1.6rem', fontWeight: 'bold' }}>{product.price || '-'}</div>
             </div>
-            <p style={{ color: '#ff4d4d', textDecoration: 'line-through', fontSize: '1rem', margin: '0' }}>{product.originalPrice}</p>
+            {product.price_3_hari && (
+              <div style={{ flex: '1 1 min(150px, 30%)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>3 Hari</p>
+                <div style={{ color: 'var(--cyan-accent)', fontSize: '1.6rem', fontWeight: 'bold' }}>{product.price_3_hari}</div>
+              </div>
+            )}
+            {product.price_7_hari && (
+              <div style={{ flex: '1 1 min(150px, 30%)', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px' }}>7 Hari</p>
+                <div style={{ color: 'var(--cyan-accent)', fontSize: '1.6rem', fontWeight: 'bold' }}>{product.price_7_hari}</div>
+              </div>
+            )}
           </div>
 
           {/* Login Method */}
@@ -81,7 +97,7 @@ Pelanggaran akan dikenakan denda dan blacklist!`,
               <Info size={18} color="var(--cyan-accent)" /> Metode Login
             </h3>
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem 1.2rem', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-              {product.loginMethod}
+              {product.login_method}
             </div>
           </div>
 
@@ -95,7 +111,7 @@ Pelanggaran akan dikenakan denda dan blacklist!`,
 
           {/* Order Button */}
           <a 
-            href={`https://wa.me/821074350521?text=${encodeURIComponent(product.whatsappText)}`}
+            href={`https://wa.me/821074350521?text=${encodeURIComponent(product.whatsapp_text || `Halo, saya ingin merental ${product.title}`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="hover-glow-blue"

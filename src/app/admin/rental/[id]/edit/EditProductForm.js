@@ -15,6 +15,8 @@ export default function EditProductForm({ product }) {
     id: product.id,
     title: product.title,
     price: product.price,
+    price_3_hari: product.price_3_hari || '',
+    price_7_hari: product.price_7_hari || '',
     original_price: product.original_price,
     category_id: product.category_id || 'pubg',
     tags: product.tags,
@@ -25,6 +27,24 @@ export default function EditProductForm({ product }) {
   
   const [file, setFile] = useState(null);
   const [categories, setCategories] = useState([]);
+
+  // Helper function to format Rupiah
+  const formatRupiah = (value) => {
+    if (!value) return '';
+    const numberString = value.toString().replace(/[^,\d]/g, '');
+    const split = numberString.split(',');
+    const sisa = split[0].length % 3;
+    let rupiah = split[0].substr(0, sisa);
+    const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+    if (ribuan) {
+      const separator = sisa ? '.' : '';
+      rupiah += separator + ribuan.join('.');
+    }
+
+    rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+    return rupiah ? 'Rp ' + rupiah : '';
+  };
 
   useEffect(() => {
     fetch('/api/admin/categories').then(res => res.json()).then(data => {
@@ -115,12 +135,16 @@ export default function EditProductForm({ product }) {
               <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga Rental</label>
-              <input type="text" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} style={inputStyle} />
+              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga 1 Hari</label>
+              <input type="text" required value={formData.price} onChange={e => setFormData({...formData, price: formatRupiah(e.target.value)})} style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga Coret (Original)</label>
-              <input type="text" required value={formData.original_price} onChange={e => setFormData({...formData, original_price: e.target.value})} style={inputStyle} />
+              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga 3 Hari</label>
+              <input type="text" required value={formData.price_3_hari} onChange={e => setFormData({...formData, price_3_hari: formatRupiah(e.target.value)})} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Harga 7 Hari</label>
+              <input type="text" required value={formData.price_7_hari} onChange={e => setFormData({...formData, price_7_hari: formatRupiah(e.target.value)})} style={inputStyle} />
             </div>
             <div>
               <label style={{ display: 'block', color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Metode Login</label>

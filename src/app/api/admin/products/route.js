@@ -5,11 +5,11 @@ export async function POST(request) {
   try {
     const data = await request.json();
 
-    const { id, title, image_id, price, original_price, category_id, tags, login_method, description, whatsapp_text } = data;
+    const { id, title, image_id, price, price_3_hari, price_7_hari, original_price, category_id, tags, login_method, description, whatsapp_text } = data;
 
     await pool.query(
-      'INSERT INTO products (id, title, image_id, price, original_price, category_id, tags, login_method, description, whatsapp_text) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-      [id, title, image_id, price, original_price, category_id, JSON.stringify(tags), login_method, description, whatsapp_text]
+      'INSERT INTO products (id, title, image_id, price, price_3_hari, price_7_hari, original_price, category_id, tags, login_method, description, whatsapp_text) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+      [id, title, image_id, price, price_3_hari, price_7_hari, original_price, category_id, JSON.stringify(tags), login_method, description, whatsapp_text]
     );
 
     return NextResponse.json({ success: true });

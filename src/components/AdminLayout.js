@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Package, Tags, LogOut, Menu, X, User, Globe, Search } from 'lucide-react';
+import { Home, Package, Tags, LogOut, Menu, X, User, Globe, Search, Activity } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isProfileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -23,6 +24,7 @@ export default function AdminLayout({ children }) {
     { name: 'Dashboard', icon: <Home size={18} />, path: '/admin/dashboard' },
     { name: 'Kelola Rental', icon: <Package size={18} />, path: '/admin/rental' },
     { name: 'Kelola Kategori', icon: <Tags size={18} />, path: '/admin/kategori' },
+    { name: 'Aktivitas Rental', icon: <Activity size={18} />, path: '/admin/aktivitas' },
   ];
 
   return (
@@ -138,15 +140,6 @@ export default function AdminLayout({ children }) {
               <span style={{ fontSize: '0.9rem' }}>Landing Page</span>
             </div>
           </Link>
-          <div 
-            onClick={handleLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0.75rem 1rem', color: '#ff4d4d', fontWeight: '600', cursor: 'pointer', transition: 'background 0.2s', borderRadius: '8px' }} 
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 77, 77, 0.1)'} 
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <LogOut size={18} />
-            <span style={{ fontSize: '0.9rem' }}>Keluar</span>
-          </div>
         </div>
       </div>
 
@@ -172,11 +165,40 @@ export default function AdminLayout({ children }) {
 
           <img src="/LogoSehwarent.png" alt="SehwaRent" className="admin-header-logo" />
           
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
             <span className="admin-header-title" style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Admin SehwaRent</span>
-            <div style={{ width: '32px', height: '32px', background: 'rgba(0, 153, 255, 0.1)', border: '1px solid var(--cyan-accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cyan-accent)' }}>
+            <div 
+              onClick={() => setProfileMenuOpen(!isProfileMenuOpen)}
+              style={{ width: '32px', height: '32px', background: 'rgba(0, 153, 255, 0.1)', border: '1px solid var(--cyan-accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cyan-accent)', cursor: 'pointer' }}
+            >
               <User size={16} />
             </div>
+            
+            {/* Profile Dropdown */}
+            {isProfileMenuOpen && (
+              <div style={{
+                position: 'absolute',
+                top: '50px',
+                right: '0',
+                background: 'rgba(10, 15, 28, 0.95)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                minWidth: '180px',
+                boxShadow: '0 5px 20px rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(10px)',
+                zIndex: 1000
+              }}>
+                <div 
+                  onClick={handleLogout}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0.8rem 1rem', color: '#ff4d4d', cursor: 'pointer', borderRadius: '6px', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 77, 77, 0.1)'} 
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <LogOut size={16} /> Keluar
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -205,10 +227,6 @@ export default function AdminLayout({ children }) {
             <span style={{ fontSize: '0.65rem' }}>Landing</span>
           </div>
         </Link>
-        <div onClick={handleLogout} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#ff4d4d', cursor: 'pointer' }}>
-          <LogOut size={18} />
-          <span style={{ fontSize: '0.65rem' }}>Keluar</span>
-        </div>
       </div>
     </div>
     </>

@@ -10,7 +10,8 @@ export default function ProductManager({ initialProducts }) {
   const [products, setProducts] = useState(initialProducts);
   const [deleteId, setDeleteId] = useState(null);
   const [rentModalOpen, setRentModalOpen] = useState(null);
-  const [rentHours, setRentHours] = useState(1);
+  const [cancelRentId, setCancelRentId] = useState(null);
+  const [rentDays, setRentDays] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
@@ -32,17 +33,18 @@ export default function ProductManager({ initialProducts }) {
     }
   };
 
-  const handleUpdateStatus = async (productId, hours = 0) => {
+  const handleUpdateStatus = async (productId, days = 0) => {
     try {
       const res = await fetch(`/api/admin/products/${productId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hours })
+        body: JSON.stringify({ days })
       });
       if (res.ok) {
         const data = await res.json();
-        setProducts(products.map(p => p.id === productId ? { ...p, available_at: data.available_at } : p));
+        setProducts(products.map(p => p.id === productId ? { ...p, available_at: data.available_at, current_rent_price: days > 0 ? p.current_rent_price : 0 } : p));
         setRentModalOpen(null);
+        setCancelRentId(null);
         router.refresh();
       } else {
         alert('Gagal mengupdate status');
@@ -160,7 +162,7 @@ export default function ProductManager({ initialProducts }) {
                     const isRented = product.available_at && new Date(product.available_at) > new Date();
                     if (isRented) {
                       return (
-                        <button onClick={() => handleUpdateStatus(product.id, 0)} style={{ background: 'rgba(255, 77, 77, 0.1)', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button onClick={() => setCancelRentId(product.id)} style={{ background: 'rgba(255, 77, 77, 0.1)', color: '#ff4d4d', border: '1px solid rgba(255, 77, 77, 0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <Clock size={14} /> Di Rental
                         </button>
                       );
@@ -221,18 +223,18 @@ export default function ProductManager({ initialProducts }) {
               <Clock size={30} />
             </div>
             <h2 style={{ color: 'white', marginBottom: '1rem' }}>Atur Durasi Rental</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Pilih berapa jam akun ini akan di rental. Status akan otomatis kembali 'Tersedia' setelah waktu habis.</p>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Pilih berapa hari akun ini akan di rental. Status akan otomatis kembali 'Tersedia' setelah waktu habis.</p>
             
             <div style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '1rem' }}>
-                {[1, 6, 12, 24].map(h => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '1rem' }}>
+                {[1, 3, 7].map(d => (
                   <button 
-                    key={h}
-                    onClick={() => setRentHours(h)}
+                    key={d}
+                    onClick={() => setRentDays(d)}
                     style={{ 
-                      background: rentHours === h ? 'var(--cyan-accent)' : 'rgba(255,255,255,0.05)', 
-                      color: rentHours === h ? '#000' : 'white', 
-                      border: `1px solid ${rentHours === h ? 'var(--cyan-accent)' : 'rgba(255,255,255,0.1)'}`, 
+                      background: rentDays === d ? 'var(--cyan-accent)' : 'rgba(255,255,255,0.05)', 
+                      color: rentDays === d ? '#000' : 'white', 
+                      border: `1px solid ${rentDays === d ? 'var(--cyan-accent)' : 'rgba(255,255,255,0.1)'}`, 
                       padding: '0.8rem 0', 
                       borderRadius: '8px', 
                       fontWeight: 'bold', 
@@ -240,7 +242,7 @@ export default function ProductManager({ initialProducts }) {
                       transition: 'all 0.2s'
                     }}
                   >
-                    {h} Jam
+                    {d} Hari
                   </button>
                 ))}
               </div>
@@ -248,8 +250,8 @@ export default function ProductManager({ initialProducts }) {
                 <input 
                   type="number" 
                   min="1"
-                  value={rentHours}
-                  onChange={e => setRentHours(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                  value={rentDays}
+                  onChange={e => setRentDays(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
                   style={{ 
                     width: '100%', 
                     padding: '1rem 3rem 1rem 1rem', 
@@ -262,15 +264,32 @@ export default function ProductManager({ initialProducts }) {
                     textAlign: 'center',
                     boxSizing: 'border-box'
                   }}
-                  placeholder="Ketik manual (Jam)"
+                  placeholder="Ketik manual (Hari)"
                 />
-                <span style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: 'bold' }}>Jam</span>
+                <span style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontWeight: 'bold' }}>Hari</span>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button onClick={() => setRentModalOpen(null)} style={{ flex: 1, padding: '0.8rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Batal</button>
-              <button onClick={() => handleUpdateStatus(rentModalOpen, rentHours)} style={{ flex: 1, padding: '0.8rem', background: 'var(--cyan-accent)', border: 'none', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 5px 15px rgba(0, 153, 255, 0.3)' }}>Simpan</button>
+              <button onClick={() => handleUpdateStatus(rentModalOpen, rentDays)} style={{ flex: 1, padding: '0.8rem', background: 'var(--cyan-accent)', border: 'none', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 5px 15px rgba(0, 153, 255, 0.3)' }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Rent Confirmation Modal */}
+      {cancelRentId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="animate-fade-in" style={{ background: 'var(--bg-secondary)', width: '90%', maxWidth: '400px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', padding: '2rem', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,165,0,0.1)', color: 'orange', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+              <Clock size={30} />
+            </div>
+            <h2 style={{ color: 'white', marginBottom: '0.5rem' }}>Batalkan Rental?</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>Apakah Anda yakin ingin membatalkan status rental untuk akun ini? Status akan kembali menjadi 'Tersedia'.</p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setCancelRentId(null)} style={{ flex: 1, padding: '0.8rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Batal</button>
+              <button onClick={() => handleUpdateStatus(cancelRentId, 0)} style={{ flex: 1, padding: '0.8rem', background: 'orange', border: 'none', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 5px 15px rgba(255, 165, 0, 0.3)' }}>Ya, Batalkan</button>
             </div>
           </div>
         </div>
