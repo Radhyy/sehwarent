@@ -66,7 +66,8 @@ export default function PromoModal() {
         position: 'relative',
         overflow: 'hidden',
         border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
+        boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+        boxSizing: 'border-box'
       }}>
         {/* Close button */}
         <button 
@@ -93,11 +94,11 @@ export default function PromoModal() {
         </button>
 
         {/* Image */}
-        <div style={{ width: '100%', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', overflow: 'hidden' }}>
+        <div style={{ width: '100%', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', overflow: 'hidden', boxSizing: 'border-box', display: 'flex', justifyContent: 'center' }}>
           <img 
             src="/Promosi.png" 
             alt="Promosi SehwaRent" 
-            style={{ width: '100%', display: 'block', objectFit: 'cover' }}
+            style={{ width: '100%', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
           />
         </div>
 

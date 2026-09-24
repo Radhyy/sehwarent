@@ -53,7 +53,7 @@ export async function POST(req) {
       if (isRented) {
         statusStr = `🔴 Di Rental (Bebas pada: ${new Date(p.available_at).toLocaleString('id-ID')})`;
       }
-      return `- ID: ${p.id} | Nama: ${p.title} | Status: ${statusStr} | Harga: 1H=${p.price}, 3H=${p.price_3_hari}, 7H=${p.price_7_hari}`;
+      return `- ID: ${p.id} | Nama: ${p.title} | Status: ${statusStr} | Harga: 1 Hari=${p.price}, 3 Hari=${p.price_3_hari}, 7 Hari=${p.price_7_hari}`;
     }).join('\n');
 
     // Use Groq AI to parse intent
