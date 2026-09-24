@@ -77,7 +77,7 @@ Jika tidak paham, kembalikan:
         { role: 'system', content: systemPrompt },
         { role: 'user', content: text }
       ],
-      model: 'llama-3.1-8b-instant', // using a faster and guaranteed valid groq model
+      model: 'qwen/qwen3.8-27b', // using stable model available on groq 2026
       temperature: 0,
       response_format: { type: 'json_object' }
     });
