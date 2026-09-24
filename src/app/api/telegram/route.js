@@ -35,42 +35,57 @@ export async function POST(req) {
     chatId = body.message.chat.id.toString();
     const text = body.message.text;
 
-    // Security check: Only allow Admin ID
-    if (chatId !== process.env.TELEGRAM_ADMIN_ID) {
+    // Security check: Allow multiple admins
+    const adminIds = (process.env.TELEGRAM_ADMIN_ID || '').split(',').map(id => id.trim());
+    if (!adminIds.includes(chatId)) {
       await sendMessage(chatId, "⚠️ <b>Akses Ditolak!</b> Anda bukan Bos saya.");
       return NextResponse.json({ status: 'ok' });
     }
 
     // Acknowledge receipt
-    await sendMessage(chatId, "⏳ <i>Memproses perintah Anda...</i>");
+    await sendMessage(chatId, "⏳ <i>Memproses...</i>");
 
     // Fetch all products to give context to AI
-    const resProducts = await pool.query('SELECT id, title FROM products');
-    const productsList = resProducts.rows.map(p => `- ID: ${p.id}, Nama: ${p.title}`).join('\n');
+    const resProducts = await pool.query('SELECT id, title, price, price_3_hari, price_7_hari, available_at FROM products');
+    const productsList = resProducts.rows.map(p => {
+      const isRented = p.available_at && new Date(p.available_at) > new Date();
+      let statusStr = '🟢 Tersedia';
+      if (isRented) {
+        statusStr = `🔴 Di Rental (Bebas pada: ${new Date(p.available_at).toLocaleString('id-ID')})`;
+      }
+      return `- ID: ${p.id} | Nama: ${p.title} | Status: ${statusStr} | Harga: 1H=${p.price}, 3H=${p.price_3_hari}, 7H=${p.price_7_hari}`;
+    }).join('\n');
 
     // Use Groq AI to parse intent
     const groq = getGroqClient();
-    const systemPrompt = `Kamu adalah AI asisten rental. 
-Tugasmu membaca pesan user dan mencocokkannya dengan daftar produk ini:
+    const systemPrompt = `Kamu adalah AI asisten SehwaRent di Telegram. Tugasmu membantu Bos mengelola rental akun. Selalu panggil user "Bos" dan gunakan bahasa santai namun profesional.
+
+Berikut adalah kondisi database/akun saat ini secara real-time:
 ${productsList}
 
-Jika pesan mengandung niat untuk merental/menyewa produk, kembalikan JSON murni TANPA TEKS LAIN dengan format:
+Kamu WAJIB membalas dengan format JSON murni TANPA teks apa pun di luarnya!
+
+Aturan Format JSON:
+1. Jika Bos bertanya sesuatu tentang akun (misal: "akun apa aja yang kosong?", "yang lagi disewa apa aja?"), gunakan format:
+{
+  "action": "reply",
+  "message": "Jawabanmu ke bos dengan bahasa yang enak dibaca. Boleh pakai emoji dan tag HTML dasar seperti <b>tebal</b> atau <i>miring</i>"
+}
+
+2. Jika Bos MENYURUH untuk MENYEWAKAN/MERENTAL produk (misal: "rentalkan pubg 3 hari", "sewakan ml 1 hari"), gunakan format:
 {
   "action": "rent",
   "product_id": "ID_YANG_PALING_COCOK",
-  "days": ANGKA_HARI (hanya boleh 1, 3, atau 7. Jika tidak disebutkan, default 1)
+  "days": ANGKA_HARI (hanya boleh 1, 3, atau 7. Jika tidak ada, default 1)
 }
 
-Jika user meminta untuk menghentikan rental / membuat tersedia kembali, formatnya:
+3. Jika Bos MENYURUH untuk MENGHENTIKAN/MEMBATALKAN rental (misal: "pubg udah beres", "batalkan mlbb"), gunakan format:
 {
   "action": "available",
   "product_id": "ID_YANG_PALING_COCOK"
 }
 
-Jika tidak paham, kembalikan:
-{
-  "action": "unknown"
-}`;
+Ingat, pastikan JSON valid!`;
 
     const completion = await groq.chat.completions.create({
       messages: [
@@ -84,8 +99,13 @@ Jika tidak paham, kembalikan:
 
     const result = JSON.parse(completion.choices[0].message.content);
 
-    if (result.action === 'unknown' || !result.product_id) {
-      await sendMessage(chatId, "❓ Maaf Bos, saya tidak paham produk mana yang dimaksud atau perinthanya kurang jelas. Coba sebutkan nama produknya.");
+    if (result.action === 'reply' && result.message) {
+      await sendMessage(chatId, result.message);
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    if (!result.product_id || !['rent', 'available'].includes(result.action)) {
+      await sendMessage(chatId, "❓ Maaf Bos, instruksi kurang jelas atau saya kebingungan mencerna perintahnya. Coba diulangi lagi.");
       return NextResponse.json({ status: 'ok' });
     }
 
