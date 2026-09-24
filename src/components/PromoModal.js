@@ -55,7 +55,8 @@ export default function PromoModal() {
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 99999,
-      padding: '1rem',
+      padding: '16px',
+      boxSizing: 'border-box',
       backdropFilter: 'blur(5px)'
     }}>
       <div className="animate-fade-in" style={{
@@ -66,8 +67,7 @@ export default function PromoModal() {
         position: 'relative',
         overflow: 'hidden',
         border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
-        boxSizing: 'border-box'
+        boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
       }}>
         {/* Close button */}
         <button 
@@ -94,11 +94,11 @@ export default function PromoModal() {
         </button>
 
         {/* Image */}
-        <div style={{ width: '100%', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', overflow: 'hidden', boxSizing: 'border-box', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ width: '100%', backgroundColor: '#13141c', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <img 
             src="/Promosi.png" 
             alt="Promosi SehwaRent" 
-            style={{ width: '100%', maxWidth: '100%', display: 'block', objectFit: 'contain' }}
+            style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'contain' }}
           />
         </div>
 
