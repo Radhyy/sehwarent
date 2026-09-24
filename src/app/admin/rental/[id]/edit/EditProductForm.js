@@ -66,7 +66,8 @@ export default function EditProductForm({ product }) {
         
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',
-          body: uploadData
+          body: uploadData,
+          credentials: 'same-origin'
         });
         const uploadResult = await uploadRes.json();
         if (!uploadRes.ok) throw new Error(uploadResult.error);
