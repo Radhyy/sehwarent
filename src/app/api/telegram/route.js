@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import Groq from 'groq-sdk';
 
-// Initialize Groq
+// Initialize Groq with random key for load balancing
 const getGroqClient = () => {
-  const keys = process.env.GROQ_API_KEYS.split(',');
-  return new Groq({ apiKey: keys[0] }); // Just use the first key for now
+  const keys = process.env.GROQ_API_KEYS.split(',').map(k => k.trim()).filter(k => k);
+  const randomKey = keys[Math.floor(Math.random() * keys.length)];
+  return new Groq({ apiKey: randomKey });
 };
 
 // Send message back to Telegram
@@ -94,6 +95,7 @@ Ingat, pastikan JSON valid!`;
       ],
       model: 'qwen/qwen3.8-27b', // using stable model available on groq 2026
       temperature: 0,
+      max_tokens: 500,
       response_format: { type: 'json_object' }
     });
 

@@ -9,7 +9,10 @@ export async function POST(req) {
     }
 
     const keysString = process.env.GROQ_API_KEYS || '';
-    const keys = keysString.split(',').map(k => k.trim()).filter(k => k);
+    let keys = keysString.split(',').map(k => k.trim()).filter(k => k);
+    
+    // Acak urutan API keys (Load Balancing & Fallback)
+    keys = keys.sort(() => Math.random() - 0.5);
 
     if (keys.length === 0) {
       return NextResponse.json({ error: 'No API keys configured' }, { status: 500 });
@@ -52,6 +55,7 @@ Aturan WhatsApp Text:
               { role: 'user', content: userMessage }
             ],
             temperature: 0.7,
+            max_tokens: 500,
             response_format: { type: 'json_object' }
           })
         });
