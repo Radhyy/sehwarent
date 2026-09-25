@@ -70,7 +70,7 @@ Aturan Format JSON:
 1. Jika Bos bertanya sesuatu tentang akun (misal: "akun apa aja yang kosong?", "yang lagi disewa apa aja?"), gunakan format:
 {
   "action": "reply",
-  "message": "Jawabanmu ke bos dengan bahasa yang enak dibaca. Boleh pakai emoji dan tag HTML dasar seperti <b>tebal</b> atau <i>miring</i>"
+  "message": "Jawabanmu ke bos. Jawablah dengan SANGAT SINGKAT, PADAT, DAN JELAS! Jangan bertele-tele. Boleh pakai emoji dan tag HTML dasar seperti <b>tebal</b> atau <i>miring</i>"
 }
 
 2. Jika Bos MENYURUH untuk MENYEWAKAN/MERENTAL produk (misal: "rentalkan pubg 3 hari", "sewakan ml 1 hari"), gunakan format:
@@ -86,6 +86,11 @@ Aturan Format JSON:
   "product_id": "ID_YANG_PALING_COCOK"
 }
 
+4. Jika Bos meminta untuk mengecek SEMUA STOK atau DAFTAR AKUN (misal: "cek stok", "tampilkan semua akun"), gunakan format:
+{
+  "action": "list_stock"
+}
+
 Ingat, pastikan JSON valid!`;
 
     const completion = await groq.chat.completions.create({
@@ -95,7 +100,7 @@ Ingat, pastikan JSON valid!`;
       ],
       model: 'qwen/qwen3.8-27b', // using stable model available on groq 2026
       temperature: 0,
-      max_tokens: 500,
+      max_tokens: 850,
       response_format: { type: 'json_object' }
     });
 
@@ -103,6 +108,23 @@ Ingat, pastikan JSON valid!`;
 
     if (result.action === 'reply' && result.message) {
       await sendMessage(chatId, result.message);
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    if (result.action === 'list_stock') {
+      const availableProducts = resProducts.rows.filter(p => !p.available_at || new Date(p.available_at) < new Date());
+      let msg = `📦 <b>Info Stok Akun (${availableProducts.length} Tersedia)</b>\n\n`;
+      availableProducts.forEach(p => {
+        msg += `🟢 <b>${p.title}</b>\n└ 1H: ${p.price} | 3H: ${p.price_3_hari} | 7H: ${p.price_7_hari}\n\n`;
+      });
+      if (availableProducts.length === 0) msg += "Semua akun sedang dirental Bos! 🚀";
+      
+      // Jika teksnya kepanjangan (misal lebih dari 4000 karakter), kita potong agar Telegram tidak error
+      if (msg.length > 4000) {
+        msg = msg.substring(0, 3900) + "\n\n... (Sebagian disembunyikan karena terlalu panjang)";
+      }
+      
+      await sendMessage(chatId, msg);
       return NextResponse.json({ status: 'ok' });
     }
 
